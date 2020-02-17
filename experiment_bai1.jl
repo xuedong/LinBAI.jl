@@ -15,7 +15,7 @@ include("experiment_helpers.jl");
 # setup
 
 dist = Gaussian();
-μ = [.5, .45, .43, .4];
+μ = [.9, .7, .5];
 pep = BestArm(dist);
 
 srs = [TrackAndStop(CTracking)];

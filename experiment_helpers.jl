@@ -13,6 +13,57 @@ function solve(pep, μ, δ, β)
 end
 
 
+function dump_stats(pep, μ, δs, βs, srs, datas)
+
+    for i in 1:length(δs)
+        δ = δs[i];
+        β = βs[i];
+        data = getindex.(datas, i);
+
+        Tstar, wstar, ⋆, lbd, practical = solve(pep, μ, δ, β)
+
+        rule = repeat("-", 60);
+
+        println("");
+        println(rule);
+        println("$pep at δ = $δ");
+        println(@sprintf("%-30s", "Arm"),
+                join(map(k -> @sprintf("%6s", k), 1:length(μ))), " ",
+                @sprintf("%7s", "total"), "  ",
+                @sprintf("%7s", "err"), "  ",
+                @sprintf("%7s", "time"));
+        println(@sprintf("%-30s", "μ"),
+                join(map(x -> @sprintf("%6.2f", x), μ)));
+        println(@sprintf("%-30s", "w⋆"),
+                join(map(x -> @sprintf("%6.2f", x), wstar)));
+        println(rule);
+        println(@sprintf("%-30s", "oracle"),
+                join(map(w -> @sprintf("%6.0f", lbd*w), wstar)), " ",
+                @sprintf("%7.0f", lbd));
+        println(@sprintf("%-30s", "practical"),
+                join(map(w -> @sprintf("%6.0f", practical*w), wstar)), " ",
+                @sprintf("%7.0f", practical));
+        println(rule);
+
+        for r in eachindex(srs)
+            Eτ = sum(x->sum(x[2]), data[r,:])/N;
+            err = sum(x->x[1].!=⋆, data[r,:])/N;
+            tim = sum(x->x[3],     data[r,:])/N;
+            println(@sprintf("%-30s", long(srs[r])),
+                    join(map(k -> @sprintf("%6.0f", sum(x->x[2][k], data[r,:])/N), eachindex(μ))), " ",
+                    @sprintf("%7.0f", Eτ), "  ",
+                    @sprintf("%7.5f", err), "  ",
+                    @sprintf("%7.5f", tim/1e6)
+                    );
+            if err > δ
+                @warn "too many errors for $(srs[r])";
+            end
+        end
+        println(rule);
+    end
+end
+
+
 function dump_stats(pep, μ, δs, βs, srs, datas, repeats)
     K = narms(pep, µ)
 

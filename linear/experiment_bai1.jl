@@ -13,10 +13,10 @@ include("../experiment_helpers.jl");
 # setup
 
 dist = Gaussian();
-dim = 4
+dim = 3
 # μ = zeros(dim);
 # µ[1] = 1.0;
-μ = [.5, .45, .43, .4];
+μ = [.9, .7, .5];
 
 arms = Vector{Float64}[]
 for k = 1:dim
