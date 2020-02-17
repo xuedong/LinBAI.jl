@@ -121,14 +121,14 @@ function optimal_design_fw(
     design = ones(length(items))
     design /= sum(design)
     measure_counts = ones(L)
-    Vinv = Matrix{Float64}(I, K, K)
+    Ainv = Matrix{Float64}(I, K, K)
 
     for count = 1:max_iter
         ida = argmin([sum([measure_counts[i] * (-2) *
-                           (transpose(items[j]) * Vinv * measures[i]) .^ 2 for i = 1:L]) for j = 1:K])
-        idb = argmax([transpose(measures[i]) * Vinv * measures[i] for i = 1:L])
+                           (transpose(items[j]) * Ainv * measures[i]) .^ 2 for i = 1:L]) for j = 1:K])
+        idb = argmax([transpose(measures[i]) * Ainv * measures[i] for i = 1:L])
 
-        Vinv = sherman_morrison(Vinv, items[ida])
+        Ainv = sherman_morrison(Ainv, items[ida])
         measure_counts[idb] += 1
 
         γ = 1 / (count + 1)
@@ -154,8 +154,8 @@ function optimal_design_fw(
     end
 
     # compute the complexity
-    AB = maximum([transpose(measures[i]) * Vinv * measures[i] for i = 1:L])
-    value = maximum([2 * transpose(items[1] - items[i]) * Vinv *
+    AB = maximum([transpose(measures[i]) * Ainv * measures[i] for i = 1:L])
+    value = maximum([2 * transpose(items[1] - items[i]) * Ainv *
                      (items[1] - items[i]) / (items[1] - items[i])'μ for i = 2:K])
 
     return design, AB, value

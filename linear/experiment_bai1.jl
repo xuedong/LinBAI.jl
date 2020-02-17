@@ -53,7 +53,7 @@ srs = [TnS(CTracking)]
 δs = (0.1,);
 βs = GK16.(δs);
 
-repeats = 100;
+repeats = 10;
 seed = 1234;
 
 
