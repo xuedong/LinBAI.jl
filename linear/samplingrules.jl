@@ -292,7 +292,7 @@ abbrev(sr::TnS) = "TnS-" * abbrev(sr.TrackingRule);
 struct TnSState
     t  # tracking rule
     TnSState(TrackingRule, N) = new(
-        TrackingRule(vec(N)),
+        ForcedExploration(TrackingRule(N)),
     )
 end
 
@@ -311,7 +311,7 @@ function nextsample(sr::TnSState, pep, star, ξ, N, P, S, Vinv)
 
     star = istar(pep, hµ)
     xstar = pep.arms[star]
-    @show xstar
+    #@show xstar
 
     # compute the plug-in estimate
     items = pep.arms
