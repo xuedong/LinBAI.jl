@@ -279,6 +279,57 @@ end
 
 
 """
+Track-and-Stop (Garivier and Kaufmann, 2016)
+"""
+
+struct TnS
+    TrackingRule
+end
+
+long(sr::TnS) = "Track-and-Stop " * abbrev(sr.TrackingRule);
+abbrev(sr::TnS) = "TnS-" * abbrev(sr.TrackingRule);
+
+struct TnSState
+    hs  # I online learners
+    t  # tracking rule
+    TnSState(TrackingRule, N) = new(
+        # Dict{Int64,AdaHedge}(),  # We could allocate one AdaHedge for each answer, but for some problems there are 2^d answers.
+        TrackingRule(vec(N)),
+    )
+end
+
+function start(sr::TnS, N, P)
+    TnSState(sr.TrackingRule, N)
+end
+
+function nextsample(sr::TnSState, pep, star, ξ, N, P, S, Vinv)
+    t = sum(N)
+
+    hμ = Vinv * S # emp. estimates
+    #println("hµ $hµ ; Vinv $Vinv")
+
+    nb_I = nanswers(pep, hµ)
+    K = length(pep.arms)
+
+    star = istar(pep, hµ)
+    xstar = pep.arms[star]
+
+    # compute the plug-in estimate
+    items = pep.arms
+    measures = build_T(items, xstar, hμ)
+    w = optimal_design_fw(items, measures, hμ)
+
+    #println("w $w")
+    #_, (_, λ), (_, ξs) = glrt(pep, w, hμ)
+
+    # tracking
+    k = track(sr.t, vec(N), w)
+    #println("k $k")
+    return star, k
+end
+
+
+"""
 k-Learner from DKM2019
 """
 

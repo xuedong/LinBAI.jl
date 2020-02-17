@@ -36,24 +36,24 @@ spanning_weights = ones(K)
 spanning_weights[K] = 0.0
 spanning_weights /= sum(spanning_weights)
 
-srs = [
-    ConvexGame(CTracking),
-    LearnerK(CTracking),
-    RoundRobin(),
-    FixedWeights(spanning_weights),
-    Static("G"),
-    Static("XY"),
-    XYAdaptive(),
-    LinGapE(),
-]
-# srs = [XYAdaptive()]
+# srs = [
+#     ConvexGame(CTracking),
+#     LearnerK(CTracking),
+#     RoundRobin(),
+#     FixedWeights(spanning_weights),
+#     Static("G"),
+#     Static("XY"),
+#     XYAdaptive(),
+#     LinGapE(),
+# ]
+srs = [TnS(DTracking)]
 
 
 # δs = (0.1, 0.01, 0.0001);
 δs = (0.1,);
 βs = GK16.(δs);
 
-repeats = 100;
+repeats = 1;
 seed = 1234;
 
 

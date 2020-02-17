@@ -1,16 +1,10 @@
 using LinearAlgebra
 using Printf
+include("pep_linear.jl");
+include("../expfam.jl");
 
 
-function sherman_morrison(Vinv, u)
-    Vinv_u = Vinv*u
-    num = Vinv_u*transpose(Vinv_u)
-    denum = 1 + transpose(u)*Vinv_u
-    return Vinv .- num / denum
-end
-
-
-function optimal_design_fw(
+function optimal_design_fw_aa(
     items,
     measures,
     max_iter = 50000,
@@ -56,7 +50,7 @@ function optimal_design_fw(
 end
 
 
-function optimal_design_fw2(
+function optimal_design_fw_ab(
     items,
     measures,
     μ,
@@ -115,7 +109,62 @@ function optimal_design_fw2(
 end
 
 
-function build_XY(items)
+function optimal_design_fw(
+    items,
+    measures,
+    μ,
+    max_iter = 10000,
+    early_stopping = 1e-5,
+    drop = false,
+    fix_threshold = 1e-5,
+)
+    K = length(items[1])
+    L = length(measures)
+    design = ones(length(items))
+    design /= sum(design)
+    measure_counts = ones(L)
+    Vinv = Matrix{Float64}(I, K, K)
+
+    for count = 1:max_iter
+        ida = argmin([sum([measure_counts[i] * (-2) *
+                           (transpose(items[j]) * Vinv * measures[i]) .^ 2 for i = 1:L]) for j = 1:K])
+        idb = argmax([transpose(measures[i]) * Vinv * measures[i] for i = 1:L])
+
+        Vinv = sherman_morrison(Vinv, items[ida])
+        measure_counts[idb] += 1
+
+        γ = 1 / (count + 1)
+        design_update = -γ * design
+        design_update[ida] += γ
+
+        relative = norm(design_update) / norm(design)
+
+        design += design_update
+
+        if relative < early_stopping
+            println("early stopped")
+            break
+        end
+    end
+
+    if drop
+        drop_total = sum(filter(x -> x < fix_threshold, design))
+        if drop_total > 0
+            design = replace(x -> x < fix_threshold ? 0 : x, design)
+            design[argmax(design)] += drop_total
+        end
+    end
+
+    # compute the complexity
+    AB = maximum([transpose(measures[i]) * Vinv * measures[i] for i = 1:L])
+    value = maximum([2 * transpose(items[1] - items[i]) * Vinv *
+                     (items[1] - items[i]) / (items[1] - items[i])'μ for i = 2:K])
+
+    return design, AB, value
+end
+
+
+function build_XY_ab(items)
     num_items = size(items)[1]
     num_features = size(items)[2]
     Y = zeros((num_items * num_items, num_features))
@@ -128,7 +177,23 @@ function build_XY(items)
 end
 
 
-function build_T(items, xstar, θ)
+function build_XY(items)
+    num_items = length(pep.arms)
+    num_features = length(pep.arms[1])
+
+    Y = Vector{Float64}[]
+    for i = 1:num_items
+        for j = 1:num_items
+            v = items[j] - items[i]
+            push!(Y, v)
+        end
+    end
+
+    return Y
+end
+
+
+function build_T_ab(items, xstar, θ)
     num_items = size(items)[1]
     num_features = size(items)[2]
     Y = zeros((num_items - 1, num_features))
@@ -141,32 +206,42 @@ function build_T(items, xstar, θ)
 end
 
 
-num_items = 3
-num_features = 2
+function build_T(items, xstar, θ)
+    num_items = length(items)
+    num_features = length(items[1])
 
-items = zeros(num_items, num_features)
-for k = 1:num_features
-    items[k, k] = 1.0
+    Y = Vector{Float64}[]
+    for i = 1:(num_items-1)
+        v = sqrt(2) * (xstar - items[i+1]) / (xstar - items[i+1])'θ
+        push!(Y, v)
+    end
+
+    return Y
 end
-ω = pi / 4
-items[num_items, 1] = cos(ω);
-items[num_items, 2] = sin(ω);
 
-measures1 = build_XY(items)
-#@show measures1
 
-#xstar = [1.0, 0.0, 0.0, 0.0]
-#μ = [0.5, 0.45, 0.43, 0.4]
-#xstar = [1.0, 0.0, 0.0, 0.0, 0.0]
-#μ = [0.3, 0.21, 0.2, 0.19, 0.18]
-xstar = [1.0, 0.0]
-μ = [1.0, 0.0]
-
-measures2 = build_T(items, xstar, μ)
-#@show measures2
-
-designAA, _, valueAA = optimal_design_fw2(items, items, μ)
-designABdir, _, valueABdir = optimal_design_fw2(items, measures1, μ)
-designABstar, _, valueABstar = optimal_design_fw2(items, measures2, μ, 50000)
-
-@show designABstar
+"""
+Tests
+"""
+# dist = Gaussian();
+# dim = 4
+# μ = zeros(dim);
+# µ[1] = 0.5; μ[2] = 0.45; μ[3] = 0.43; μ[4] = 0.4
+#
+# arms = Vector{Float64}[]
+# for k = 1:dim
+#     v = zeros(dim)
+#     v[k] = 1.0
+#     push!(arms, v)
+# end
+# # ω = pi / 6
+# # v = zeros(dim);
+# # v[1] = cos(ω);
+# # v[2] = sin(ω);
+# # push!(arms, v)
+#
+# pep = LinearBestArm(dist, arms);
+# designAA, _, _ = optimal_design_fw(pep.arms, pep.arms, μ)
+# designABdir, _, _ = optimal_design_fw(pep.arms, build_XY(pep.arms), μ)
+# designABstar, _, _ = optimal_design_fw(pep.arms, build_T(pep.arms, pep.arms[1], μ), μ, 50000)
+# @show designABstar
