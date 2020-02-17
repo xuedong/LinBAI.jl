@@ -13,9 +13,10 @@ include("../experiment_helpers.jl");
 # setup
 
 dist = Gaussian();
-dim = 2
-μ = zeros(dim);
-µ[1] = 1.0;
+dim = 4
+# μ = zeros(dim);
+# µ[1] = 1.0;
+μ = [.5, .45, .43, .4];
 
 arms = Vector{Float64}[]
 for k = 1:dim
@@ -23,11 +24,11 @@ for k = 1:dim
     v[k] = 1.0
     push!(arms, v)
 end
-ω = pi / 6
-v = zeros(dim);
-v[1] = cos(ω);
-v[2] = sin(ω);
-push!(arms, v)
+# ω = pi / 6
+# v = zeros(dim);
+# v[1] = cos(ω);
+# v[2] = sin(ω);
+# push!(arms, v)
 
 pep = LinearBestArm(dist, arms);
 

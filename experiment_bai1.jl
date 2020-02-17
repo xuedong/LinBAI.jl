@@ -14,17 +14,17 @@ include("experiment_helpers.jl");
 
 # setup
 
-dist = Bernoulli();
+dist = Gaussian();
 μ = [.5, .45, .43, .4];
 pep = BestArm(dist);
 
-srs = everybody(pep, μ);
+srs = [TrackAndStop(CTracking)];
 
 
-δs = (0.5, 0.1);
+δs = (0.1,);
 βs = GK16.(δs); # Recommended in section 6 of paper
 
-N = 3000;
+N = 10;
 seed = 1234;
 
 
