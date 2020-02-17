@@ -1,7 +1,5 @@
 using LinearAlgebra
 using Printf
-include("pep_linear.jl");
-include("../expfam.jl");
 
 
 function optimal_design_fw_aa(
@@ -142,7 +140,7 @@ function optimal_design_fw(
         design += design_update
 
         if relative < early_stopping
-            println("early stopped")
+            #println("early stopped")
             break
         end
     end

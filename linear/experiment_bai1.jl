@@ -46,14 +46,14 @@ spanning_weights /= sum(spanning_weights)
 #     XYAdaptive(),
 #     LinGapE(),
 # ]
-srs = [TnS(DTracking)]
+srs = [TnS(CTracking)]
 
 
 # δs = (0.1, 0.01, 0.0001);
 δs = (0.1,);
 βs = GK16.(δs);
 
-repeats = 1;
+repeats = 100;
 seed = 1234;
 
 
