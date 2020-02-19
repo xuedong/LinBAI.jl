@@ -26,6 +26,7 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
     # βs: list of thresholds.
     convex_sr = typeof(sr) == ConvexGame || typeof(sr) == ConvexGameL  # test if P is needed.
     gap_sr = typeof(sr) == LinGapE
+    sfw_sr = typeof(sr) == SLGapE
     xya_sr = typeof(sr) == XYAdaptive
 
     βs = collect(βs) # mutable copy
@@ -39,6 +40,7 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
     N = zeros(Int64, K)              # counts
     S = zeros(dim)                     # sum of samples
     Vinv = Matrix{Float64}(I, dim, dim)  # inverse of the design matrix
+    V = Matrix{Float64}(I, dim, dim) # counts matrix
     ρ = 1
     ρ_old = 1
     Xactive = copy(pep.arms)
@@ -78,6 +80,20 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
                     return R
                 end
             end
+        elseif sfw_sr
+            Z, (_, _), (star, ξ) = glrt(pep, N, hμ)
+
+            while Z > βs[1](t)
+            #println("Z big")
+                popfirst!(βs)
+                push!(R, (star, copy(N), copy(P), CPUtime_us() - baseline))
+                if isempty(βs)
+                    return R
+                end
+            end
+
+            # invoke sampling rule
+            i, k, V = nextsample(state, pep, star, ξ, N, P, S, Vinv, V)
         elseif xya_sr
             #_, (_, _), (star, ξ) = glrt(pep, N, hμ)
 

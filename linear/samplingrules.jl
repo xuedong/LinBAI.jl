@@ -291,9 +291,7 @@ abbrev(sr::TnS) = "TnS-" * abbrev(sr.TrackingRule);
 
 struct TnSState
     t  # tracking rule
-    TnSState(TrackingRule, N) = new(
-        ForcedExploration(TrackingRule(N)),
-    )
+    TnSState(TrackingRule, N) = new(ForcedExploration(TrackingRule(N)),)
 end
 
 function start(sr::TnS, N, P)
@@ -395,6 +393,39 @@ function nextsample(sr::LearnerK_DKMState, pep, star, ξ, N, P, S, Vinv)
     k = track(sr.t, vec(N), w)
     #println("k $k")
     return star, k
+end
+
+
+"""
+Saddle point Frank-Wolfe
+"""
+
+struct SLGapE end
+
+long(sr::SLGapE) = "SLGapE";
+abbrev(sr::SLGapE) = "SFW";
+
+function start(sr::SLGapE, N, P)
+    return sr
+end
+
+function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, V)
+    t = sum(N)
+
+    hμ = Vinv * S # emp. estimates
+    #println("hµ $hµ ; Vinv $Vinv")
+
+    nb_I = nanswers(pep, hµ)
+    K = length(pep.arms)
+
+    star = istar(pep, hµ)
+
+    k = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
+    Y = build_T(pep.arms, pep.arms[star], hμ)
+    bnext = argmax([transpose(b) * Vinv * b for b in Y])
+    V .+= bnext * transpose(bnext)
+
+    return star, k, V
 end
 
 
