@@ -422,8 +422,11 @@ function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, V)
 
     k = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
     Y = build_T(pep.arms, pep.arms[star], hμ)
-    bnext = argmax([transpose(b) * Vinv * b for b in Y])
-    V .+= bnext * transpose(bnext)
+    idb = argmax([transpose(b) * Vinv * b for b in Y])
+    bnext = Y[idb]
+    @show bnext * transpose(bnext)
+    V .= V + bnext * transpose(bnext)
+    @show V
 
     return star, k, V
 end
