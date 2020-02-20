@@ -56,7 +56,7 @@ srs = [SLT3C(), SLGapE(), LT3C("G"), LinGapE()]
 βs = GK16.(δs);
 
 repeats = 100;
-seed = 12345;
+seed = 123;
 
 
 # compute
