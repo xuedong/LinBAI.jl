@@ -52,7 +52,7 @@ srs = [SLGapE("TS"), LinGapE(), ConvexGame(CTracking)]
 
 
 # δs = (0.1, 0.01, 0.0001);
-δs = (0.001,);
+δs = (0.00001,);
 βs = GK16.(δs);
 
 repeats = 100;
