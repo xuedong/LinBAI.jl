@@ -397,17 +397,23 @@ end
 
 
 """
-Saddle-point Frank-Wolfe L-T3C
+L-T3C
 """
 
 struct LT3C
+    ExplorationType
 end
 
-long(sr::LT3C) = "L-T3C-Greedy";
-abbrev(sr::LT3C) = "T-G";
+long(sr::LT3C) = "L-T3C-" * sr.ExplorationType;
+abbrev(sr::LT3C) = "T-" * sr.ExplorationType;
 
 function start(sr::LT3C, N, P)
     return sr
+end
+
+function compute_confidence(arm1, arm2, cov)
+    confidence = sqrt(transpose(arm1 - arm2) * cov * (arm1 - arm2))
+    return confidence
 end
 
 function nextsample(sr::LT3C, pep, star, ξ, N, P, S, Vinv, V)
@@ -427,17 +433,32 @@ function nextsample(sr::LT3C, pep, star, ξ, N, P, S, Vinv, V)
         ts[a] = sum(θ .* pep.arms[a])
     end
     best = argmax(ts)
-    Y = build_T(pep.arms, pep.arms[best], hμ)
 
-    ida = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
-    idb = argmax([transpose(b) * Vinv * b for b in Y])
-    bnext = Y[idb]
+    scores = zeros(K)
+    for i = 1:K
+        if i != best
+            scores[i] = compute_transportation(pep.arms[best], pep.arms[i], hμ, Vinv)
+        else
+            scores[i] = Inf
+        end
+    end
+    challenger = randmin(scores)
 
-    # L = length(Y)
-    # ida = argmin([sum([C[i] * (-2) * (transpose(pep.arms[j]) * Vinv * Y[i]) .^ 2 for i = 1:L]) for j = 1:K])
-    # idb = argmax([transpose(Y[i]) * Vinv * Y[i] for i = 1:L])
+    if sr.ExplorationType == "G"
+        k = randmin([compute_confidence(
+            pep.arms[best],
+            pep.arms[challenger],
+            sherman_morrison(Vinv, pep.arms[i]),
+        ) for i = 1:K])
+    elseif sr.ExplorationType == "N"
+        if (rand() > 0.5)
+            k = best
+        else
+            k = challenger
+        end
+    end
 
-    return star, ida, bnext
+    return star, k
 end
 
 
@@ -445,8 +466,7 @@ end
 Saddle-point Frank-Wolfe L-T3C
 """
 
-struct SLT3C
-end
+struct SLT3C end
 
 long(sr::SLT3C) = "SL-T3C";
 abbrev(sr::SLT3C) = "SFW-T";
@@ -490,8 +510,7 @@ end
 Saddle-point Frank-Wolfe LinGapE
 """
 
-struct SLGapE
-end
+struct SLGapE end
 
 long(sr::SLGapE) = "SLGapE";
 abbrev(sr::SLGapE) = "SFW-L";
