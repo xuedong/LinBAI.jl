@@ -14,7 +14,7 @@ include("../experiment_helpers.jl");
 # setup
 
 dist = Gaussian();
-dim = 5
+dim = 3
 μ = zeros(dim);
 µ[1] = 1.0;
 # μ = [.9, .7, .5];
@@ -55,7 +55,7 @@ srs = [SLT3C(), SLGapE(), LinGapE(), ConvexGame(CTracking)]
 δs = (0.01,);
 βs = GK16.(δs);
 
-repeats = 100;
+repeats = 10;
 seed = 1234;
 
 
