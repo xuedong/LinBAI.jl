@@ -426,8 +426,7 @@ function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, C)
 
     Y = build_T(pep.arms, pep.arms[star], hμ)
     L = length(Y)
-    ida = argmin([sum([C[i] * (-2) *
-                       (transpose(pep.arms[j]) * Vinv * Y[i]) .^ 2 for i = 1:L]) for j = 1:K])
+    ida = argmin([sum([C[i] * (-2) * (transpose(pep.arms[j]) * Vinv * Y[i]) .^ 2 for i = 1:L]) for j = 1:K])
     idb = argmax([transpose(Y[i]) * Vinv * Y[i] for i = 1:L])
 
     return star, ida, idb
