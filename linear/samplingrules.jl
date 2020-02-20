@@ -397,21 +397,20 @@ end
 
 
 """
-Saddle point Frank-Wolfe
+Saddle-point Frank-Wolfe L-T3C
 """
 
-struct SLGapE
-    ExplorationType
+struct SLT3C
 end
 
-long(sr::SLGapE) = "SLGapE-" * sr.ExplorationType;
-abbrev(sr::SLGapE) = "SFW-" * sr.ExplorationType;
+long(sr::SLT3C) = "SL-T3C";
+abbrev(sr::SLT3C) = "SFW-T";
 
-function start(sr::SLGapE, N, P)
+function start(sr::SLT3C, N, P)
     return sr
 end
 
-function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, C)
+function nextsample(sr::SLT3C, pep, star, ξ, N, P, S, Vinv, C)
     hμ = Vinv * S # emp. estimates
     #println("hµ $hµ ; Vinv $Vinv")
 
@@ -427,24 +426,66 @@ function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, C)
     # bnext = Y[idb]
     # V = V .+ bnext * transpose(bnext)
 
-    if sr.ExplorationType == "N"
-        Y = build_T(pep.arms, pep.arms[star], hμ)
-    elseif sr.ExplorationType == "TS"
-        ts = zeros(K)
-        for a = 1:K
-            z = rand(MvNormal(dim, 1))
-            θ = Vinv^0.5 * z + hμ
-            ts[a] = sum(θ .* pep.arms[a])
-        end
-        best = argmax(ts)
-        Y = build_T(pep.arms, pep.arms[best], hμ)
+    ts = zeros(K)
+    for a = 1:K
+        z = rand(MvNormal(dim, 1))
+        θ = Vinv^0.5 * z + hμ
+        ts[a] = sum(θ .* pep.arms[a])
     end
-    
+    best = argmax(ts)
+    Y = build_T(pep.arms, pep.arms[best], hμ)
+
     L = length(Y)
     ida = argmin([sum([C[i] * (-2) * (transpose(pep.arms[j]) * Vinv * Y[i]) .^ 2 for i = 1:L]) for j = 1:K])
     idb = argmax([transpose(Y[i]) * Vinv * Y[i] for i = 1:L])
 
     return star, ida, idb
+end
+
+
+"""
+Saddle-point Frank-Wolfe LinGapE
+"""
+
+struct SLGapE
+end
+
+long(sr::SLGapE) = "SLGapE";
+abbrev(sr::SLGapE) = "SFW-L";
+
+function start(sr::SLGapE, N, P)
+    return sr
+end
+
+function gap(arm1, arm2, μ)
+    (arm1 - arm2)'μ
+end
+
+function confidence(arm1, arm2, Vinv)
+    sqrt(transpose(arm1 - arm2) * Vinv * (arm1 - arm2))
+end
+
+function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, V, β)
+    hμ = Vinv * S # emp. estimates
+    #println("hµ $hµ ; Vinv $Vinv")
+
+    nb_I = nanswers(pep, hµ)
+    K = length(pep.arms)
+    dim = length(pep.arms[1])
+
+    star = istar(pep, hµ)
+    xstar = pep.arms[star]
+
+    # Y = build_T(pep.arms, xstar, hμ)
+
+    c_t = sqrt(2 * β)
+    ucb, ambiguous = findmax([gap(pep.arms[i], xstar, hμ) +
+                              confidence(pep.arms[i], xstar, Vinv) * c_t for i = 1:K])
+
+    ida = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
+    bnext = sqrt(2) * (xstar - pep.arms[ambiguous]) / (xstar - pep.arms[ambiguous])'hμ
+
+    return star, ida, bnext, ucb
 end
 
 

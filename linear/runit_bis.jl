@@ -26,7 +26,8 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
     # βs: list of thresholds.
     convex_sr = typeof(sr) == ConvexGame || typeof(sr) == ConvexGameL  # test if P is needed.
     gap_sr = typeof(sr) == LinGapE
-    sfw_sr = typeof(sr) == SLGapE
+    sfwt_sr = typeof(sr) == SLT3C
+    sfwl_sr = typeof(sr) == SLGapE
     xya_sr = typeof(sr) == XYAdaptive
 
     βs = collect(βs) # mutable copy
@@ -40,8 +41,8 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
     N = zeros(Int64, K)              # counts
     S = zeros(dim)                     # sum of samples
     Vinv = Matrix{Float64}(I, dim, dim)  # inverse of the design matrix
-    # V = Matrix{Float64}(I, dim, dim) # counts matrix
-    sfw_sr ? C = ones(K-1) : nothing
+    sfwl_sr ? V = Matrix{Float64}(I, dim, dim) : nothing # counts matrix
+    sfwt_sr ? C = ones(K-1) : nothing
     ρ = 1
     ρ_old = 1
     Xactive = copy(pep.arms)
@@ -81,7 +82,21 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
                     return R
                 end
             end
-        elseif sfw_sr
+        elseif  sfwl_sr
+            _, (_, _), (star, ξ) = glrt(pep, N, hμ)
+
+            # invoke sampling rule
+            i, k, bnext, ucb = nextsample(state, pep, star, ξ, N, P, S, Vinv, V, βs[1](t))
+
+            while ucb <= 0
+            #println("B $B")
+                popfirst!(βs)
+                push!(R, (star, copy(N), copy(P), CPUtime_us() - baseline))
+                if isempty(βs)
+                    return R
+                end
+            end
+        elseif sfwt_sr
             Z, (_, _), (star, ξ) = glrt(pep, N, hμ)
 
             # invoke sampling rule
@@ -141,7 +156,8 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
 
         # play the choosen arm
         play!(i, k, rng, pep, µ, S, N, P, Vinv)
-        sfw_sr ? C[idb] += 1 : nothing
+        sfwl_sr ? V .= V .+ bnext*transpose(bnext) : nothing 
+        sfwt_sr ? C[idb] += 1 : nothing
         convex_sr ? P[i, k] += 1 : nothing
         t += 1
     end
