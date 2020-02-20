@@ -400,7 +400,9 @@ end
 Saddle point Frank-Wolfe
 """
 
-struct SLGapE end
+struct SLGapE
+    ExplorationType
+end
 
 long(sr::SLGapE) = "SLGapE";
 abbrev(sr::SLGapE) = "SFW";
@@ -415,8 +417,16 @@ function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, C)
 
     nb_I = nanswers(pep, hµ)
     K = length(pep.arms)
+    dim = length(pep.arms[1])
 
     star = istar(pep, hµ)
+    ts = zeros(K)
+    for a = 1:K
+        z = rand(MvNormal(dim, 1))
+        θ = Vinv^0.5 * z + hμ
+        ts[a] = sum(θ .* pep.arms[a])
+    end
+    best = argmax(ts)
 
     # ida = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
     # Y = build_T(pep.arms, pep.arms[star], hμ)
@@ -424,7 +434,7 @@ function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, C)
     # bnext = Y[idb]
     # V = V .+ bnext * transpose(bnext)
 
-    Y = build_T(pep.arms, pep.arms[star], hμ)
+    Y = build_T(pep.arms, pep.arms[best], hμ)
     L = length(Y)
     ida = argmin([sum([C[i] * (-2) * (transpose(pep.arms[j]) * Vinv * Y[i]) .^ 2 for i = 1:L]) for j = 1:K])
     idb = argmax([transpose(Y[i]) * Vinv * Y[i] for i = 1:L])

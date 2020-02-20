@@ -4,6 +4,7 @@ using JLD2;
 using Distributed;
 using Printf;
 using IterTools;
+using Distributions
 
 @everywhere include("runit_bis.jl");
 @everywhere include("../thresholds.jl");
@@ -47,14 +48,14 @@ spanning_weights /= sum(spanning_weights)
 #     XYAdaptive(),
 #     LinGapE(),
 # ]
-srs = [SLGapE(), LinGapE()]
+srs = [SLGapE(), LinGapE(), ConvexGame(CTracking)]
 
 
 # δs = (0.1, 0.01, 0.0001);
-δs = (0.1,);
+δs = (0.0000001,);
 βs = GK16.(δs);
 
-repeats = 1;
+repeats = 1000;
 seed = 1234;
 
 
