@@ -48,14 +48,14 @@ spanning_weights /= sum(spanning_weights)
 #     XYAdaptive(),
 #     LinGapE(),
 # ]
-srs = [SLGapE(), LinGapE(), ConvexGame(CTracking)]
+srs = [SLGapE("TS"), LinGapE(), ConvexGame(CTracking)]
 
 
 # δs = (0.1, 0.01, 0.0001);
-δs = (0.0000001,);
+δs = (0.001,);
 βs = GK16.(δs);
 
-repeats = 1000;
+repeats = 100;
 seed = 1234;
 
 
