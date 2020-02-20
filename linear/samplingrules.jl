@@ -411,12 +411,22 @@ function start(sr::LT3C, N, P)
     return sr
 end
 
+function compute_transportation(arm1, arm2, μ, cov)
+    norm = transpose(arm1 - arm2) * cov * (arm1 - arm2)
+    if (arm2'μ - arm1'μ < 0)
+        cost = (arm1'μ - arm2'μ)^2 / (2 * norm)
+    else
+        cost = 0
+    end
+    return cost
+end
+
 function compute_confidence(arm1, arm2, cov)
     confidence = sqrt(transpose(arm1 - arm2) * cov * (arm1 - arm2))
     return confidence
 end
 
-function nextsample(sr::LT3C, pep, star, ξ, N, P, S, Vinv, V)
+function nextsample(sr::LT3C, pep, star, ξ, N, P, S, Vinv)
     hμ = Vinv * S # emp. estimates
     #println("hµ $hµ ; Vinv $Vinv")
 
@@ -494,7 +504,7 @@ function nextsample(sr::SLT3C, pep, star, ξ, N, P, S, Vinv, V)
     best = argmax(ts)
     Y = build_T(pep.arms, pep.arms[best], hμ)
 
-    ida = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
+    ida = argmax([2 * transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
     idb = argmax([transpose(b) * Vinv * b for b in Y])
     bnext = Y[idb]
 
@@ -544,7 +554,7 @@ function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, V, β)
     ucb, ambiguous = findmax([gap(pep.arms[i], xstar, hμ) +
                               confidence(pep.arms[i], xstar, Vinv) * c_t for i = 1:K])
 
-    ida = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
+    ida = argmax([2 * transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
     bnext = sqrt(2) * (xstar - pep.arms[ambiguous]) / (xstar - pep.arms[ambiguous])'hμ
 
     return star, ida, bnext, ucb

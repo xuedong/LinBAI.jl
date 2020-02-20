@@ -14,9 +14,9 @@ include("../experiment_helpers.jl");
 # setup
 
 dist = Gaussian();
-dim = 3
+dim = 2
 μ = zeros(dim);
-µ[1] = 1.0;
+µ[1] = 2.0;
 # μ = [.9, .7, .5];
 
 arms = Vector{Float64}[]
@@ -25,7 +25,7 @@ for k = 1:dim
     v[k] = 1.0
     push!(arms, v)
 end
-ω = pi / 6
+ω = 0.1
 v = zeros(dim);
 v[1] = cos(ω);
 v[2] = sin(ω);
@@ -48,15 +48,15 @@ spanning_weights /= sum(spanning_weights)
 #     XYAdaptive(),
 #     LinGapE(),
 # ]
-srs = [SLT3C(), SLGapE(), LinGapE(), ConvexGame(CTracking)]
+srs = [SLT3C(), SLGapE(), LT3C("G"), LinGapE()]
 
 
 # δs = (0.1, 0.01, 0.0001);
-δs = (0.01,);
+δs = (0.1,);
 βs = GK16.(δs);
 
-repeats = 10;
-seed = 1234;
+repeats = 100;
+seed = 12345;
 
 
 # compute

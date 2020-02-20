@@ -146,7 +146,7 @@ function boxes(pep, μ, δ, β, srs, data)
             xs,
             map(x -> sum(x[2]), data)',
             label="",
-            notch=false,
+            notch=true,
             outliers=true)
 
         plot!(xs,
