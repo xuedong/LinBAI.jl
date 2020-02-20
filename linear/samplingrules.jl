@@ -410,7 +410,7 @@ function start(sr::SLT3C, N, P)
     return sr
 end
 
-function nextsample(sr::SLT3C, pep, star, ξ, N, P, S, Vinv, C)
+function nextsample(sr::SLT3C, pep, star, ξ, N, P, S, Vinv, V)
     hμ = Vinv * S # emp. estimates
     #println("hµ $hµ ; Vinv $Vinv")
 
@@ -419,12 +419,6 @@ function nextsample(sr::SLT3C, pep, star, ξ, N, P, S, Vinv, C)
     dim = length(pep.arms[1])
 
     star = istar(pep, hµ)
-
-    # ida = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
-    # Y = build_T(pep.arms, pep.arms[star], hμ)
-    # idb = argmin([transpose(b) * Vinv * b for b in Y])
-    # bnext = Y[idb]
-    # V = V .+ bnext * transpose(bnext)
 
     ts = zeros(K)
     for a = 1:K
@@ -435,11 +429,15 @@ function nextsample(sr::SLT3C, pep, star, ξ, N, P, S, Vinv, C)
     best = argmax(ts)
     Y = build_T(pep.arms, pep.arms[best], hμ)
 
-    L = length(Y)
-    ida = argmin([sum([C[i] * (-2) * (transpose(pep.arms[j]) * Vinv * Y[i]) .^ 2 for i = 1:L]) for j = 1:K])
-    idb = argmax([transpose(Y[i]) * Vinv * Y[i] for i = 1:L])
+    ida = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
+    idb = argmax([transpose(b) * Vinv * b for b in Y])
+    bnext = Y[idb]
 
-    return star, ida, idb
+    # L = length(Y)
+    # ida = argmin([sum([C[i] * (-2) * (transpose(pep.arms[j]) * Vinv * Y[i]) .^ 2 for i = 1:L]) for j = 1:K])
+    # idb = argmax([transpose(Y[i]) * Vinv * Y[i] for i = 1:L])
+
+    return star, ida, bnext
 end
 
 

@@ -209,9 +209,13 @@ function build_T(items, xstar, θ)
     num_features = length(items[1])
 
     Y = Vector{Float64}[]
-    for i = 1:(num_items-1)
-        v = sqrt(2) * (xstar - items[i+1]) / (xstar - items[i+1])'θ
-        push!(Y, v)
+    for i = 1:num_items
+        if xstar == items[i]
+            continue
+        else
+            v = sqrt(2) * (xstar - items[i]) / (xstar - items[i])'θ
+            push!(Y, v)
+        end
     end
 
     return Y

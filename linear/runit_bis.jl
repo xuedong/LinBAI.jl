@@ -41,8 +41,10 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
     N = zeros(Int64, K)              # counts
     S = zeros(dim)                     # sum of samples
     Vinv = Matrix{Float64}(I, dim, dim)  # inverse of the design matrix
+
     sfwl_sr ? V = Matrix{Float64}(I, dim, dim) : nothing # counts matrix
-    sfwt_sr ? C = ones(K-1) : nothing
+    sfwt_sr ? V = Matrix{Float64}(I, dim, dim) : nothing
+    # sfwt_sr ? C = ones(K-1) : nothing
     ρ = 1
     ρ_old = 1
     Xactive = copy(pep.arms)
@@ -100,7 +102,7 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
             Z, (_, _), (star, ξ) = glrt(pep, N, hμ)
 
             # invoke sampling rule
-            i, k, idb = nextsample(state, pep, star, ξ, N, P, S, Vinv, C)
+            i, k, bnext = nextsample(state, pep, star, ξ, N, P, S, Vinv, V)
 
             while Z > βs[1](t)
             #println("Z big")
@@ -156,8 +158,9 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
 
         # play the choosen arm
         play!(i, k, rng, pep, µ, S, N, P, Vinv)
-        sfwl_sr ? V .= V .+ bnext*transpose(bnext) : nothing 
-        sfwt_sr ? C[idb] += 1 : nothing
+        sfwl_sr ? V .= V .+ bnext*transpose(bnext) : nothing
+        sfwt_sr ? V .= V .+ bnext*transpose(bnext) : nothing
+        # sfwt_sr ? C[idb] += 1 : nothing
         convex_sr ? P[i, k] += 1 : nothing
         t += 1
     end
