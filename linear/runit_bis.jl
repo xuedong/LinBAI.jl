@@ -42,13 +42,13 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
     S = zeros(dim)                     # sum of samples
     Vinv = Matrix{Float64}(I, dim, dim)  # inverse of the design matrix
 
-    sfwl_sr ? V = Matrix{Float64}(I, dim, dim) : nothing # counts matrix
-    sfwt_sr ? V = Matrix{Float64}(I, dim, dim) : nothing
+    sfwl_sr || sfwt_sr ? V = Matrix{Float64}(I, dim, dim) : nothing # counts matrix
+    # sfwt_sr ? V = Matrix{Float64}(I, dim, dim) : nothing
     # sfwt_sr ? C = ones(K-1) : nothing
-    ρ = 1
-    ρ_old = 1
-    Xactive = copy(pep.arms)
-    α = 0.1
+    xya_sr ? ρ = 1 : nothing
+    xya_sr ? ρ_old = 1 : nothing
+    xya_sr ? Xactive = copy(pep.arms) : nothing
+    xya_sr ? α = 0.1 : nothing
 
     baseline = CPUtime_us()
 
@@ -158,8 +158,8 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
 
         # play the choosen arm
         play!(i, k, rng, pep, µ, S, N, P, Vinv)
-        sfwl_sr ? V .= V .+ bnext*transpose(bnext) : nothing
-        sfwt_sr ? V .= V .+ bnext*transpose(bnext) : nothing
+        sfwl_sr || sfwt_sr ? V .= V .+ bnext*transpose(bnext) : nothing
+        # sfwt_sr ? V .= V .+ bnext*transpose(bnext) : nothing
         # sfwt_sr ? C[idb] += 1 : nothing
         convex_sr ? P[i, k] += 1 : nothing
         t += 1
