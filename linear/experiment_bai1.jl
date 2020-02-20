@@ -55,7 +55,7 @@ srs = [SLGapE(), LinGapE()]
 βs = GK16.(δs);
 
 repeats = 1;
-seed = 1236;
+seed = 1234;
 
 
 # compute
