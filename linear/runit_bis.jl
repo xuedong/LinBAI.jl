@@ -40,7 +40,8 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
     N = zeros(Int64, K)              # counts
     S = zeros(dim)                     # sum of samples
     Vinv = Matrix{Float64}(I, dim, dim)  # inverse of the design matrix
-    V = Matrix{Float64}(I, dim, dim) # counts matrix
+    # V = Matrix{Float64}(I, dim, dim) # counts matrix
+    sfw_sr ? C = ones(K-1) : nothing
     ρ = 1
     ρ_old = 1
     Xactive = copy(pep.arms)
@@ -83,6 +84,9 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
         elseif sfw_sr
             Z, (_, _), (star, ξ) = glrt(pep, N, hμ)
 
+            # invoke sampling rule
+            i, k, idb = nextsample(state, pep, star, ξ, N, P, S, Vinv, C)
+
             while Z > βs[1](t)
             #println("Z big")
                 popfirst!(βs)
@@ -91,9 +95,6 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
                     return R
                 end
             end
-
-            # invoke sampling rule
-            i, k, V = nextsample(state, pep, star, ξ, N, P, S, Vinv, V)
         elseif xya_sr
             #_, (_, _), (star, ξ) = glrt(pep, N, hμ)
 
@@ -140,6 +141,7 @@ function runit(seed, sr, μs, pep::Union{LinearBestArm,LinearThreshold}, βs, δ
 
         # play the choosen arm
         play!(i, k, rng, pep, µ, S, N, P, Vinv)
+        sfw_sr ? C[idb] += 1 : nothing
         convex_sr ? P[i, k] += 1 : nothing
         t += 1
     end

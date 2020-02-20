@@ -47,7 +47,7 @@ spanning_weights /= sum(spanning_weights)
 #     XYAdaptive(),
 #     LinGapE(),
 # ]
-srs = [SLGapE()]
+srs = [SLGapE(), LinGapE()]
 
 
 # δs = (0.1, 0.01, 0.0001);

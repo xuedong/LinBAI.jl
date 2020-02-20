@@ -409,9 +409,7 @@ function start(sr::SLGapE, N, P)
     return sr
 end
 
-function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, V)
-    t = sum(N)
-
+function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, C)
     hμ = Vinv * S # emp. estimates
     #println("hµ $hµ ; Vinv $Vinv")
 
@@ -420,15 +418,19 @@ function nextsample(sr::SLGapE, pep, star, ξ, N, P, S, Vinv, V)
 
     star = istar(pep, hµ)
 
-    k = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
-    Y = build_T(pep.arms, pep.arms[star], hμ)
-    idb = argmax([transpose(b) * Vinv * b for b in Y])
-    bnext = Y[idb]
-    @show bnext * transpose(bnext)
-    V .= V + bnext * transpose(bnext)
-    @show V
+    # k = argmax([transpose(pep.arms[i]) * Vinv * V * Vinv * pep.arms[i] for i = 1:K])
+    # Y = build_T(pep.arms, pep.arms[star], hμ)\
+    # idb = argmin([transpose(b) * Vinv * b for b in Y])
+    # bnext = Y[idb]
+    # V = V .+ bnext * transpose(bnext)
 
-    return star, k, V
+    Y = build_T(pep.arms, pep.arms[star], hμ)
+    L = length(Y)
+    ida = argmin([sum([C[i] * (-2) *
+                       (transpose(pep.arms[j]) * Vinv * Y[i]) .^ 2 for i = 1:L]) for j = 1:K])
+    idb = argmax([transpose(Y[i]) * Vinv * Y[i] for i = 1:L])
+
+    return star, ida, idb
 end
 
 
@@ -454,8 +456,6 @@ function confidence(arm1, arm2, Vinv)
 end
 
 function nextsample(sr::LinGapE, pep, star, ξ, N, P, S, Vinv, β)
-    t = sum(N)
-
     hμ = Vinv * S # emp. estimates
     #println("hµ $hµ ; Vinv $Vinv")
 
@@ -494,8 +494,6 @@ function start(sr::Static, N, P)
 end
 
 function nextsample(sr::Static, pep, star, ξ, N, P, S, Vinv)
-    t = sum(N)
-
     hμ = Vinv * S # emp. estimates
     #println("hµ $hµ ; Vinv $Vinv")
 
